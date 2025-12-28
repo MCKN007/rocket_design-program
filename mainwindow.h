@@ -60,14 +60,15 @@ private:
     OFScanRange getOFScanRange(const QString& oxid, const QString& fuel); // 获取扫描范围
     void findOptimalOF();                 // 寻找最佳O/F
     void plotOFScanCurve();               // 绘制O/F扫描曲线
-
+    void initializeChart();        // 添加这个声明
+    void addTestDataToChart();     // 添加这个声明
     // 辅助函数
     void updateUIWithResults();           // 更新UI显示结果
     void clearAllResults();               // 清空所有结果
     bool validateInputParameters();       // 验证输入参数
     void exportResultsToFile(const QString& filename); // 导出结果到文件
     void updateStatus(const QString& message, int timeout = 0); // 更新状态栏
-
+    void checkChartStatus();
     // 单位转换函数
     double mmToM(double mm) { return mm / 1000.0; }
     double mToMm(double m) { return m * 1000.0; }

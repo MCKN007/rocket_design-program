@@ -92,61 +92,7 @@ MainWindow::MainWindow(QWidget *parent)
             this, &MainWindow::onFuelChanged);
 
     // ===== 初始化图表 =====
-    if (ui->widget_chart) {
-        // 创建图表
-        chart = new QChart();
-        chart->setTitle("比冲 vs 混合比 (Isp vs O/F)");
-        chart->setAnimationOptions(QChart::SeriesAnimations);
-
-        // 创建曲线系列
-        ispSeries = new QLineSeries();
-        ispSeries->setName("比冲曲线");
-        ispSeries->setColor(QColor(65, 105, 225)); // 皇家蓝
-        ispSeries->setPointsVisible(true);
-
-        // 创建最佳点系列
-        optimalPoint = new QScatterSeries();
-        optimalPoint->setName("最佳点");
-        optimalPoint->setMarkerSize(15.0);
-        optimalPoint->setColor(Qt::red);
-        optimalPoint->setBorderColor(Qt::darkRed);
-
-        // 添加到图表
-        chart->addSeries(ispSeries);
-        chart->addSeries(optimalPoint);
-
-        // 创建坐标轴
-        QValueAxis *axisX = new QValueAxis();
-        axisX->setTitleText("混合比 (O/F)");
-        axisX->setLabelFormat("%.2f");
-        axisX->setRange(1.0, 8.0);
-        axisX->setTickCount(8);
-
-        QValueAxis *axisY = new QValueAxis();
-        axisY->setTitleText("比冲 Isp (秒)");
-        axisY->setLabelFormat("%.0f");
-        axisY->setRange(200, 500);
-        axisY->setTickCount(7);
-
-        chart->addAxis(axisX, Qt::AlignBottom);
-        chart->addAxis(axisY, Qt::AlignLeft);
-
-        ispSeries->attachAxis(axisX);
-        ispSeries->attachAxis(axisY);
-        optimalPoint->attachAxis(axisX);
-        optimalPoint->attachAxis(axisY);
-
-        // 创建图表视图
-        chartView = new QChartView(chart);
-        chartView->setRenderHint(QPainter::Antialiasing);
-        chartView->setBackgroundBrush(QBrush(QColor(240, 240, 240)));
-
-        // 添加到布局
-        QVBoxLayout *layout = new QVBoxLayout(ui->widget_chart);
-        layout->setContentsMargins(0, 0, 0, 0);
-        layout->addWidget(chartView);
-        ui->widget_chart->setLayout(layout);
-    }
+    initializeChart();
 
     // 检查CEA状态
     if (!ceaEngine->isCEAAvailable()) {
@@ -162,6 +108,155 @@ MainWindow::~MainWindow()
 {
     delete ui;
     delete ceaEngine;
+}
+
+// ===== 图表初始化函数 =====
+void MainWindow::initializeChart()
+{
+    if (!ui->widget_chart) {
+        qWarning() << "widget_chart 指针为空!";
+        return;
+    }
+
+    // 清除widget_chart上可能已有的内容
+    QLayout* existingLayout = ui->widget_chart->layout();
+    if (existingLayout) {
+        QLayoutItem* item;
+        while ((item = existingLayout->takeAt(0)) != nullptr) {
+            if (item->widget()) {
+                item->widget()->setParent(nullptr);
+            }
+            delete item;
+        }
+        delete existingLayout;
+    }
+
+    // 创建图表对象
+    chart = new QChart();
+    chart->setTitle("比冲 vs 混合比 (Isp vs O/F)");
+    chart->setAnimationOptions(QChart::SeriesAnimations);
+    chart->setTheme(QChart::ChartThemeLight);
+
+    // 创建曲线系列
+    ispSeries = new QLineSeries();
+    ispSeries->setName("比冲曲线");
+    ispSeries->setColor(QColor(65, 105, 225));
+    ispSeries->setPointsVisible(true);
+    ispSeries->setPen(QPen(QBrush(QColor(65, 105, 225)), 2));
+
+    // 创建最佳点系列
+    optimalPoint = new QScatterSeries();
+    optimalPoint->setName("最佳点");
+    optimalPoint->setMarkerSize(15.0);
+    optimalPoint->setColor(Qt::red);
+    optimalPoint->setBorderColor(Qt::darkRed);
+    optimalPoint->setMarkerShape(QScatterSeries::MarkerShapeCircle);
+
+    // 添加到图表
+    chart->addSeries(ispSeries);
+    chart->addSeries(optimalPoint);
+
+    // 创建坐标轴
+    QValueAxis *axisX = new QValueAxis();
+    axisX->setTitleText("混合比 (O/F)");
+    axisX->setTitleBrush(QBrush(Qt::black));
+    axisX->setLabelFormat("%.2f");
+    axisX->setRange(1.0, 8.0);
+    axisX->setTickCount(8);
+    axisX->setGridLineVisible(true);
+    axisX->setMinorTickCount(1);
+
+    QValueAxis *axisY = new QValueAxis();
+    axisY->setTitleText("比冲 Isp (秒)");
+    axisY->setTitleBrush(QBrush(Qt::black));
+    axisY->setLabelFormat("%.0f");
+    axisY->setRange(200, 500);
+    axisY->setTickCount(7);
+    axisY->setGridLineVisible(true);
+    axisY->setMinorTickCount(1);
+
+    // 连接系列和坐标轴
+    chart->addAxis(axisX, Qt::AlignBottom);
+    chart->addAxis(axisY, Qt::AlignLeft);
+
+    ispSeries->attachAxis(axisX);
+    ispSeries->attachAxis(axisY);
+    optimalPoint->attachAxis(axisX);
+    optimalPoint->attachAxis(axisY);
+
+    // 创建图表视图
+    chartView = new QChartView(chart);
+    chartView->setRenderHint(QPainter::Antialiasing);
+    chartView->setBackgroundBrush(QBrush(QColor(245, 245, 245)));
+    chartView->setRubberBand(QChartView::RectangleRubberBand);
+    chartView->setInteractive(true);
+
+    // 添加到布局
+    QVBoxLayout *layout = new QVBoxLayout(ui->widget_chart);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(0);
+    layout->addWidget(chartView);
+    ui->widget_chart->setLayout(layout);
+
+    // 确保widget_chart可见
+    ui->widget_chart->setVisible(true);
+    chartView->setVisible(true);
+
+    // 添加假数据用于测试图表显示
+    addTestDataToChart();
+
+    qDebug() << "图表初始化完成";
+}
+
+// ===== 添加测试数据函数 =====
+void MainWindow::addTestDataToChart()
+{
+    if (!chart || !ispSeries) {
+        qWarning() << "图表未初始化，无法添加测试数据";
+        return;
+    }
+
+    // 清空现有数据
+    ispSeries->clear();
+    if (optimalPoint) {
+        optimalPoint->clear();
+    }
+
+    // 生成假数据用于测试显示
+    // 这是一个典型的LOX/RP-1比冲曲线
+    QVector<QPointF> testData;
+    testData << QPointF(1.5, 280.0)
+             << QPointF(2.0, 310.0)
+             << QPointF(2.5, 330.0)
+             << QPointF(3.0, 340.0)
+             << QPointF(3.5, 335.0)
+             << QPointF(4.0, 325.0)
+             << QPointF(4.5, 315.0)
+             << QPointF(5.0, 305.0);
+
+    // 添加测试数据
+    for (const QPointF& point : testData) {
+        ispSeries->append(point);
+    }
+
+    // 添加一个测试的最佳点
+    if (optimalPoint) {
+        optimalPoint->append(3.0, 340.0);
+        bestOF = 3.0;
+        bestIsp = 340.0;
+    }
+
+    // 更新图表
+    chart->setTitle("测试图表 - LOX/RP-1 比冲曲线");
+
+    // 确保图表视图更新
+    if (chartView) {
+        chartView->update();
+        chartView->repaint();
+    }
+
+    qDebug() << "测试图表数据已添加，应有" << testData.size() << "个数据点";
+    qDebug() << "测试最佳点: O/F =" << bestOF << ", Isp =" << bestIsp;
 }
 
 // ===== 槽函数实现 =====
@@ -377,21 +472,61 @@ void MainWindow::calculateEngineGeometry()
     double Dc = Dt * 3.5;  // 取中间值
     geometry.chamberDiameter = mToMm(Dc);
 
-    // 燃烧室长度 (L* = Vc/At，典型L* = 0.8-1.2m)
+    // 6. 计算燃烧室长度 (L* = Vc/At，典型L* = 0.8-1.2m)
     double Lstar = 1.0;  // 典型特征长度 1.0m
     double Vc = Lstar * At;
     double Lc = Vc / (PI * Dc * Dc / 4);
     geometry.chamberLength = mToMm(Lc);
 
-    // 6. 计算扩张半角 (经验值 12-18度)
+    // 7. 计算特征长度 (实际值)
+    // 对于火箭发动机，特征长度L*通常在0.8-1.5m之间
+    // 我们可以基于推进剂组合和燃烧室压力给出一个合理值
+    QString oxid = ui->comboBox_oxidizer->currentData().toString();
+    QString fuel = ui->comboBox_fuel->currentData().toString();
+
+    // 根据不同推进剂组合设置特征长度
+    if ((oxid == "LOX" || oxid == "O2") && (fuel == "RP-1" || fuel == "C2H5OH" || fuel == "CH4")) {
+        Lstar = 1.0;  // 液氧/烃类燃料
+    } else if ((oxid == "LOX" || oxid == "O2") && fuel == "LH2") {
+        Lstar = 1.2;  // 液氧/液氢
+    } else if (oxid == "NTO" && (fuel == "UDMH" || fuel == "MMH")) {
+        Lstar = 0.9;  // NTO/肼类燃料
+    } else {
+        Lstar = 1.0;  // 默认值
+    }
+
+    // 8. 计算收敛段长度 (经验公式)
+    // 收敛段长度通常为喉部直径的0.5-1.5倍
+    double L_conv = Dt * 1.0;  // 取中间值
+
+    // 9. 基于新的Lstar重新计算燃烧室体积和长度
+    Vc = Lstar * At;
+    Lc = Vc / (PI * Dc * Dc / 4);
+    geometry.chamberLength = mToMm(Lc);
+
+    // 10. 计算扩张半角 (经验值 12-18度)
     geometry.halfAngle = 15.0;
     geometry.expansionRatio = expansion;
+
+    // 11. 更新UI显示
+    ui->lineEdit_chamber_dia->setText(QString::number(geometry.chamberDiameter, 'f', 2));
+    ui->lineEdit_chamber_len->setText(QString::number(geometry.chamberLength, 'f', 2));
+    ui->lineEdit_throat_dia->setText(QString::number(geometry.throatDiameter, 'f', 2));
+    ui->lineEdit_exit_dia->setText(QString::number(geometry.exitDiameter, 'f', 2));
+    ui->lineEdit_expansion_ratio->setText(QString::number(geometry.expansionRatio, 'f', 1));
+    ui->lineEdit_half_angle->setText(QString::number(geometry.halfAngle, 'f', 1));
+
+    // 12. 显示特征长度和收敛段长度
+    ui->lineEdit_tezheng->setText(QString::number(Lstar, 'f', 3));  // 特征长度 (m)
+    ui->lineEdit_shoulian_long->setText(QString::number(mToMm(L_conv), 'f', 2));  // 收敛段长度 (mm)
 
     qDebug() << "几何参数计算完成:"
              << "喉径:" << geometry.throatDiameter << "mm"
              << "出口直径:" << geometry.exitDiameter << "mm"
              << "燃烧室直径:" << geometry.chamberDiameter << "mm"
-             << "燃烧室长度:" << geometry.chamberLength << "mm";
+             << "燃烧室长度:" << geometry.chamberLength << "mm"
+             << "特征长度L*:" << Lstar << "m"
+             << "收敛段长度:" << mToMm(L_conv) << "mm";
 }
 
 void MainWindow::calculateInjectorParameters()
@@ -545,22 +680,29 @@ void MainWindow::performOFScan()
             ofValues.append(of);
             ispValues.append(result.Isp_vac);
 
-            // 添加到曲线
-            if (ispSeries) {
-                ispSeries->append(of, result.Isp_vac);
-            }
+            qDebug() << "扫描点: O/F =" << of << ", Isp =" << result.Isp_vac;
         }
     }
 
-    updateStatus("O/F扫描完成", 3000);
+    if (ofValues.isEmpty()) {
+        QMessageBox::warning(this, "警告", "O/F扫描未获得有效数据");
+        // 如果没有真实数据，显示测试数据
+        addTestDataToChart();
+        return;
+    }
 
-    // 找到最佳O/F并更新图表
+    updateStatus("O/F扫描完成，正在绘制曲线...", 3000);
+
+    // 找到最佳O/F
     findOptimalOF();
+
+    // 绘制曲线
     plotOFScanCurve();
 
     // 更新最佳O/F到输入框
     if (bestOF > 0) {
         ui->lineEdit_of_ratio->setText(QString::number(bestOF, 'f', 2));
+        updateStatus(QString("找到最佳O/F: %1, 对应比冲: %2秒").arg(bestOF, 0, 'f', 2).arg(bestIsp, 0, 'f', 1), 5000);
     }
 }
 
@@ -621,8 +763,31 @@ void MainWindow::findOptimalOF()
 
 void MainWindow::plotOFScanCurve()
 {
-    if (ofValues.isEmpty() || ispValues.isEmpty() || !chart) {
+    if (ofValues.isEmpty() || ispValues.isEmpty()) {
+        qWarning() << "没有数据可用于绘制曲线";
         return;
+    }
+
+    if (!chart || !ispSeries || !optimalPoint || !chartView) {
+        qWarning() << "图表组件未初始化";
+        return;
+    }
+
+    qDebug() << "开始绘制真实曲线，数据点数:" << ofValues.size();
+
+    // 清空之前的曲线数据
+    ispSeries->clear();
+    optimalPoint->clear();
+
+    // 添加真实数据点
+    for (int i = 0; i < ofValues.size(); ++i) {
+        ispSeries->append(ofValues[i], ispValues[i]);
+    }
+
+    // 添加最佳点
+    if (bestOF > 0 && bestIsp > 0) {
+        optimalPoint->append(bestOF, bestIsp);
+        qDebug() << "真实最佳点: O/F =" << bestOF << ", Isp =" << bestIsp;
     }
 
     // 更新图表标题
@@ -630,7 +795,7 @@ void MainWindow::plotOFScanCurve()
     QString fuel = ui->comboBox_fuel->currentText();
     chart->setTitle(QString("%1 / %2 - 比冲 vs 混合比").arg(oxid).arg(fuel));
 
-    // 更新坐标轴范围
+    // 更新坐标轴
     QValueAxis *axisX = qobject_cast<QValueAxis*>(chart->axes(Qt::Horizontal).first());
     QValueAxis *axisY = qobject_cast<QValueAxis*>(chart->axes(Qt::Vertical).first());
 
@@ -641,7 +806,17 @@ void MainWindow::plotOFScanCurve()
         double minIsp = *std::min_element(ispValues.begin(), ispValues.end());
         double maxIsp = *std::max_element(ispValues.begin(), ispValues.end());
 
-        // 添加一些边距
+        // 确保有合理的范围
+        if (maxOF - minOF < 0.1) {
+            minOF = bestOF - 0.5;
+            maxOF = bestOF + 0.5;
+        }
+        if (maxIsp - minIsp < 10) {
+            minIsp = bestIsp - 20;
+            maxIsp = bestIsp + 20;
+        }
+
+        // 添加边距
         double xMargin = (maxOF - minOF) * 0.1;
         double yMargin = (maxIsp - minIsp) * 0.1;
 
@@ -649,18 +824,19 @@ void MainWindow::plotOFScanCurve()
         if (xMargin < 0.01) xMargin = 0.1;
         if (yMargin < 1.0) yMargin = 10.0;
 
+        // 设置坐标轴范围
         axisX->setRange(minOF - xMargin, maxOF + xMargin);
         axisY->setRange(minIsp - yMargin, maxIsp + yMargin);
 
-        // 更新刻度
-        axisX->setTickCount(qMin(10, static_cast<int>((maxOF - minOF) / 0.1) + 1));
-        axisY->setTickCount(qMin(10, static_cast<int>((maxIsp - minIsp) / 10) + 1));
+        qDebug() << "真实数据坐标轴范围: X[" << minOF - xMargin << "," << maxOF + xMargin
+                 << "], Y[" << minIsp - yMargin << "," << maxIsp + yMargin << "]";
     }
 
-    // 更新图表
-    if (chartView) {
-        chartView->update();
-    }
+    // 强制更新图表
+    chartView->update();
+    chartView->repaint();
+
+    qDebug() << "真实曲线绘制完成";
 }
 
 // ===== 辅助函数 =====
@@ -721,6 +897,10 @@ void MainWindow::clearAllResults()
     ui->lineEdit_fin_width->clear();
     ui->lineEdit_fin_spacing->clear();
     ui->lineEdit_fin_count->clear();
+
+    // 清空特征长度和收敛段长度
+    ui->lineEdit_tezheng->clear();
+    ui->lineEdit_shoulian_long->clear();
 }
 
 bool MainWindow::validateInputParameters()
@@ -776,7 +956,6 @@ void MainWindow::exportResultsToFile(const QString& filename)
 
     QTextStream out(&file);
 
-// 设置编码（Qt6兼容）
 #if QT_VERSION_MAJOR >= 6
     out.setEncoding(QStringConverter::Utf8);
 #else
@@ -815,7 +994,9 @@ void MainWindow::exportResultsToFile(const QString& filename)
     out << "喉部直径: " << ui->lineEdit_throat_dia->text() << " mm\n";
     out << "出口直径: " << ui->lineEdit_exit_dia->text() << " mm\n";
     out << "扩张比: " << ui->lineEdit_expansion_ratio->text() << "\n";
-    out << "扩张半角: " << ui->lineEdit_half_angle->text() << " °\n\n";
+    out << "扩张半角: " << ui->lineEdit_half_angle->text() << " °\n";
+    out << "特征长度(L*): " << ui->lineEdit_tezheng->text() << " m\n";
+    out << "收敛段长度: " << ui->lineEdit_shoulian_long->text() << " mm\n\n";
 
     // 喷注器参数
     out << "【喷注器参数】\n";

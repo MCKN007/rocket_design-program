@@ -740,20 +740,43 @@
     <property name="geometry">
      <rect>
       <x>160</x>
-      <y>240</y>
-      <width>40</width>
-      <height>12</height>
+      <y>200</y>
+      <width>111</width>
+      <height>16</height>
      </rect>
     </property>
     <property name="text">
      <string>特征长度</string>
     </property>
    </widget>
-   <widget class="QLineEdit" name="lineEdit">
+   <widget class="QLineEdit" name="lineEdit_tezheng">
     <property name="geometry">
      <rect>
       <x>160</x>
-      <y>250</y>
+      <y>220</y>
+      <width>113</width>
+      <height>20</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_29">
+    <property name="geometry">
+     <rect>
+      <x>160</x>
+      <y>240</y>
+      <width>81</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>收敛段长度</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="lineEdit_shoulian_long">
+    <property name="geometry">
+     <rect>
+      <x>160</x>
+      <y>260</y>
       <width>113</width>
       <height>20</height>
      </rect>
